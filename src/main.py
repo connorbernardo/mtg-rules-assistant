@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import anthropic
 from pathlib import Path
 from sentence_transformers import SentenceTransformer, util
+import requests
 
 load_dotenv()
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
@@ -16,13 +17,40 @@ def load_docs(docs_folder: str="docs"):
         result[docs.name] = docs.read_text()
     return result
 
-def retrieve_relevant_doc(question: str, docs:list):
+def fetch_scryfall(question):
+    """ Extract a card name from the question and fetch its data from Scryfall """
+    # Ask Claude to extract just the card name
+    extraction = client.messages.create(
+        model="claude-sonnet-5",
+        max_tokens=50,
+        messages=[{"role": "user", "content": f"Extract just the MTG card name from this question. Reply with only the card name, nothing else: {question}"}]
+    )
+    card_name = None
+    for block in extraction.content:
+        if block.type == "text":
+            card_name = block.text.strip()
+            break
+
+    if not card_name:
+        return ""
+
+    response = requests.get(
+        "https://api.scryfall.com/cards/named",
+        params={"fuzzy": card_name},
+        headers={"User-Agent": "mtg-rules-assistant/1.0"}
+    )
+
+    if response.status_code != 200:
+        return ""
+
+    card = response.json()
+    return f"Card: {card.get('name', '')}\n{card.get('oracle_text', '')}"
+
+def retrieve_relevant_doc(question: str, docs:list, doc_vectors):
     """ Find the doc most relevant to the question using vectors """
     relevant_doc = None
-
-    # convert values and question to vectors
     doc_texts = list(docs.values())
-    doc_vectors = model.encode(doc_texts)
+    # convert question to vectors
     question_vector = model.encode(question)
 
     # rank similiarites and return best score
@@ -45,17 +73,7 @@ def ask_claude(question: str, context:str) -> str:
     for block in response.content:
         if block.type == "text":
             return block.text
+    return ""
 
-def main():
-    """ load docs, retrieve, ask, print"""
-    docs = load_docs()
-    print("I am the MTG rules assistant, please ask me a MTG commander-related question.\n")
-    while True:
-        user_input = input()
-        relevant_doc = retrieve_relevant_doc(user_input, docs)
-        answer = ask_claude(user_input, relevant_doc)
-        print(answer)
 
-if __name__ == "__main__":
-    main()
 
