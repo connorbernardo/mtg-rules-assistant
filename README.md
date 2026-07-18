@@ -18,7 +18,7 @@ A command-line tool that answers Magic: The Gathering Commander rules questions 
 
 1. Clone the repo
    ```bash
-   git clone https://github.com/your-username/mtg-rules-assistant.git
+   git clone https://github.com/connorbernardo/mtg-rules-assistant
    cd mtg-rules-assistant
    ```
 
@@ -52,9 +52,9 @@ I am the MTG rules assistant, please ask me a MTG commander-related question.
 mtg-rules-assistant/
 +-- docs/               # MTG Commander rules reference files
 +-- src/
-¦   +-- main.py         # Main application
+ï¿½   +-- main.py         # Main application
 +-- tests/
-¦   +-- test_api.py     # API connection test
+ï¿½   +-- test_api.py     # API connection test
 +-- requirements.txt
-+-- .env                # Not committed — create this yourself
++-- .env                # Not committed ï¿½ create this yourself
 ```
